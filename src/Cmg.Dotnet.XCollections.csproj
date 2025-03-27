@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Description>Additional Collection Types for .NET</Description>
+    <PackageId>Cmg.Dotnet.XCollections</PackageId>
+    <PackageTags>dotnet;collections;</PackageTags>
+    <Version>1.0.0</Version>
+    <Authors>Clark Granum</Authors>
+    <Company>CMG</Company>
+    <RepositoryUrl>https://github.com/cmg2146/dotnet-xcollections</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/cmg2146/dotnet-xcollections</PackageProjectUrl>
+    <IsTrimmable>true</IsTrimmable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>
