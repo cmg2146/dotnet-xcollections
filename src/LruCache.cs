@@ -36,7 +36,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// Constructs an instance of an LruCache
     /// </summary>
     /// <param name="capacity">The maximum number of items that can be added to the cache. If null, the cache is unlimited.</param>
-    public LruCache(long? capacity)
+    public LruCache(long? capacity = null)
     {
         _orderedCache = new SequentialDictionary<TKey, TValue>();
 

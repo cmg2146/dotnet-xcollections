@@ -269,4 +269,31 @@ public class SequentialDictionaryTest
         Assert.Equal(testList.Select(x => x.Key), dict.Keys);
         Assert.Equal(testList.Select(x => x.Value), dict.Values);
     }
+
+    [Fact]
+    public void TestConstructor()
+    {
+        var testList = new List<KeyValuePair<string, int>>
+        {
+            new("one", 1),
+            new("two", 2),
+            new("three", 3),
+            new("four", 4),
+            new("five", 5),
+            new("six", 6)
+        };
+        var dict = new SequentialDictionary<string, int>()
+        {
+            testList[0],
+            testList[1],
+            testList[2],
+            testList[3],
+            testList[4],
+            testList[5],
+        };
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
+    }
 }
