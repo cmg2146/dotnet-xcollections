@@ -63,6 +63,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
             if (_orderedCache.TryGetValue(key, out var value))
             {
                 // any time an item is retrieved, move it to the end of the cache
+                // NOTE: Inefficient. one more key lookup than necessary due to TryGetValue called above
                 _orderedCache.MoveToLast(key);
             }
 
@@ -87,13 +88,14 @@ public class LruCache<TKey, TValue> where TKey : notnull
             if (item == null)
             {
                 // if there isnt room left, delete oldest entry from cache
-                if (Count == Capacity)
+                if (Count >= Capacity)
                 {
                     _orderedCache.RemoveFirst();
                 }
             }
 
             // add or update cached value
+            // NOTE: Inefficient. one more key lookup than necessary due to Get called above
             _orderedCache[key] = value;
         }
     }

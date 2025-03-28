@@ -188,8 +188,11 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
     {
         // will raise an exception if key is not found
         var node = _dict[key];
-        _storage.Remove(node);
-        _storage.AddFirst(node);
+        if (node != _storage.First)
+        {
+            _storage.Remove(node);
+            _storage.AddFirst(node);
+        }
     }
 
     /// <summary>
@@ -200,8 +203,11 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
     {
         // will raise an exception if key is not found
         var node = _dict[key];
-        _storage.Remove(node);
-        _storage.AddLast(node);
+        if (node != _storage.Last)
+        {
+            _storage.Remove(node);
+            _storage.AddLast(node);
+        }
     }
 
     /// <summary>
