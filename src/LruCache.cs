@@ -10,6 +10,19 @@ namespace Cmg.Dotnet.XCollections;
 public class LruCache<TKey, TValue> where TKey : notnull
 {
     private long? _capacity = null;
+    private readonly SequentialDictionary<TKey, TValue> _orderedCache;
+    private readonly object _lock = new();
+
+    /// <summary>
+    /// Constructs an instance of an LruCache
+    /// </summary>
+    /// <param name="capacity">The maximum number of items that can be added to the cache. If null, the cache is unlimited.</param>
+    public LruCache(long? capacity = null)
+    {
+        _orderedCache = new SequentialDictionary<TKey, TValue>();
+
+        Capacity = capacity;
+    }
 
     /// <summary>
     /// The maximum number of items that can be added to the cache. If null, the cache is unlimited.
@@ -29,20 +42,6 @@ public class LruCache<TKey, TValue> where TKey : notnull
             }
             _capacity = value;
         }
-    }
-
-    private readonly SequentialDictionary<TKey, TValue> _orderedCache;
-    private readonly object _lock = new();
-
-    /// <summary>
-    /// Constructs an instance of an LruCache
-    /// </summary>
-    /// <param name="capacity">The maximum number of items that can be added to the cache. If null, the cache is unlimited.</param>
-    public LruCache(long? capacity = null)
-    {
-        _orderedCache = new SequentialDictionary<TKey, TValue>();
-
-        Capacity = capacity;
     }
 
     /// <summary>
