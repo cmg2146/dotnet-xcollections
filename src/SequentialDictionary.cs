@@ -57,7 +57,8 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
     }
 
     /// <inheritdoc/>
-    public ICollection<TKey> Keys => _dict.Keys;
+    // iterate over the storage instead of the dictionary to return keys in correct order
+    public ICollection<TKey> Keys => _storage.Select(x => x.Key).ToList();
     /// <inheritdoc/>
     public ICollection<TValue> Values => _storage.Select(x => x.Value).ToList();
 

@@ -197,9 +197,76 @@ public class SequentialDictionaryTest
         Assert.Throws<KeyNotFoundException>(() => dict[invalidKey]);
     }
 
-    [Fact]
-    public void TestSequentialOrder()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TestSequentialOrder(bool useIndexer)
     {
-        // verify Keys, Values, GetEnumerator
+        var testList = new List<KeyValuePair<string, int>>
+        {
+            new("one", 1),
+            new("two", 2),
+            new("three", 3),
+            new("four", 4),
+            new("five", 5),
+            new("six", 6)
+        };
+        var dict = new SequentialDictionary<string, int>();
+        var testIndex = testList.Count / 2;
+
+        // add the items to the dictionary
+        foreach (var item in testList)
+        {
+            if (useIndexer)
+            {
+                dict[item.Key] = item.Value;
+            }
+            else
+            {
+                dict.Add(item);
+            }
+        }
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
+
+        // move an item to the end
+        var itemToMove = testList[testIndex];
+        testList.RemoveAt(testIndex);
+        testList.Add(itemToMove);
+        // move the item in the dictionary too
+        dict.MoveToLast(itemToMove.Key);
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
+
+        // move an item from the middle to the start
+        itemToMove = testList[testIndex];
+        testList.RemoveAt(testIndex);
+        testList.Insert(0, itemToMove);
+        // move the item in the dictionary too
+        dict.MoveToFirst(itemToMove.Key);
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
+
+        // remove last item
+        testList.RemoveAt(testList.Count-1);
+        dict.RemoveLast();
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
+
+        // remove first item
+        testList.RemoveAt(0);
+        dict.RemoveFirst();
+
+        Assert.Equal(testList, dict);
+        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
+        Assert.Equal(testList.Select(x => x.Value), dict.Values);
     }
 }
