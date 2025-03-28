@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Cmg.Dotnet.XCollections;
 
 /// <summary>
@@ -49,25 +51,27 @@ public class LruCache<TKey, TValue> where TKey : notnull
     public int Count => _orderedCache.Count;
 
     /// <summary>
-    /// Gets the item with specified key.
+    /// Tries to get the item with specified key.
     /// </summary>
     /// <param name="key"></param>
+    /// <param name="value"></param>
     /// <returns>
-    /// The item with the specified key or null if key is not found. If the key is found, the
-    /// associated item is moved to the end of the cache.
+    /// True if the item is found, false otherwise.
     /// </returns>
-    public TValue? Get(TKey key)
+    public bool TryGet(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         lock (_lock)
         {
-            if (_orderedCache.TryGetValue(key, out var value))
+            if (!_orderedCache.TryGetValue(key, out value))
             {
-                // any time an item is retrieved, move it to the end of the cache
-                // NOTE: Inefficient. one more key lookup than necessary due to TryGetValue called above
-                _orderedCache.MoveToLast(key);
+                return false;
             }
 
-            return value;
+            // any time an item is retrieved, move it to the end of the cache
+            // NOTE: Inefficient. one more key lookup than necessary due to TryGetValue called above
+            _orderedCache.MoveToLast(key);
+
+            return true;
         }
     }
 
@@ -80,14 +84,12 @@ public class LruCache<TKey, TValue> where TKey : notnull
     {
         lock (_lock)
         {
-            // call Get so if item exists it is moved to end of cache
-            var item = Get(key);
-
-            // if item wasnt found then we will be adding a new entry
-            // WARNING: What if null is a valid value?
-            if (item == null)
+            // call TryGet so if item exists it is moved to end of cache
+            var found = TryGet(key, out var item);
+            if (!found)
             {
-                // if there isnt room left, delete oldest entry from cache
+                // if item wasnt found then we will be adding a new entry. If there isnt room
+                // left, delete oldest entry from cache.
                 if (Count >= Capacity)
                 {
                     _orderedCache.RemoveFirst();

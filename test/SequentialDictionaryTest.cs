@@ -7,6 +7,26 @@ using Cmg.Dotnet.XCollections;
 public class SequentialDictionaryTest
 {
 
+    [Fact]
+    public void TestTryGetValue()
+    {
+        var invalidKey = "keynotfound";
+        var entry = new KeyValuePair<string, int>("key", 1);
+        var dict = new SequentialDictionary<string, int>
+        {
+            entry
+        };
+
+        // lookup a key that exists
+        var found = dict.TryGetValue(entry.Key, out var val);
+        Assert.True(found);
+        Assert.True(val == entry.Value);
+
+        // lookup a key that doesnt exist.
+        found = dict.TryGetValue(invalidKey, out var val2);
+        Assert.False(found);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(8)]
