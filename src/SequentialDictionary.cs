@@ -203,4 +203,31 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
         _storage.Remove(node);
         _storage.AddLast(node);
     }
+
+    /// <summary>
+    /// Returns the last item in the dictionary.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Dictionary is empty</exception>
+    /// <remarks>
+    /// The <seealso cref="Enumerable.Last"/> extension method has been overloaded here
+    /// for increased performance. That method requires iterating from the start of the list.
+    /// </remarks>
+    public KeyValuePair<TKey, TValue> Last()
+    {
+        return _storage.Last == null
+            ? throw new InvalidOperationException("Dictionary is empty")
+            : _storage.Last.Value;
+    }
+
+    /// <summary>
+    /// Returns the last item in the dictionary, or null if empty.
+    /// </summary>
+    /// /// <remarks>
+    /// The <seealso cref="Enumerable.LastOrDefault"/> extension method has been overloaded here
+    /// for increased performance. That method requires iterating from the start of the list.
+    /// </remarks>
+    public KeyValuePair<TKey, TValue>? LastOrDefault()
+    {
+        return _storage.Last?.Value;
+    }
 }

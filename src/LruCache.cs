@@ -1,7 +1,7 @@
 namespace Cmg.Dotnet.XCollections;
 
 /// <summary>
-/// An implementation of a Least Recently Used cache
+/// A thread safe implementation of a Least Recently Used cache
 /// </summary>
 /// <typeparam name="TKey"></typeparam>
 /// <typeparam name="TValue"></typeparam>
@@ -29,7 +29,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
         }
     }
 
-    private readonly SequentialDictionary<TKey, TValue> _cache;
+    private readonly SequentialDictionary<TKey, TValue> _orderedCache;
     private readonly object _lock = new();
 
     /// <summary>
@@ -38,7 +38,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// <param name="capacity">The maximum number of items that can be added to the cache. If null, the cache is unlimited.</param>
     public LruCache(long? capacity)
     {
-        _cache = new SequentialDictionary<TKey, TValue>();
+        _orderedCache = new SequentialDictionary<TKey, TValue>();
 
         Capacity = capacity;
     }
@@ -46,7 +46,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// <summary>
     /// Gets the number of items currently in the cache.
     /// </summary>
-    public int Count => _cache.Count;
+    public int Count => _orderedCache.Count;
 
     /// <summary>
     /// Gets the item with specified key.
@@ -60,10 +60,10 @@ public class LruCache<TKey, TValue> where TKey : notnull
     {
         lock (_lock)
         {
-            if (_cache.TryGetValue(key, out var value))
+            if (_orderedCache.TryGetValue(key, out var value))
             {
                 // any time an item is retrieved, move it to the end of the cache
-                _cache.MoveToLast(key);
+                _orderedCache.MoveToLast(key);
             }
 
             return value;
@@ -89,12 +89,12 @@ public class LruCache<TKey, TValue> where TKey : notnull
                 // if there isnt room left, delete oldest entry from cache
                 if (Count == Capacity)
                 {
-                    _cache.RemoveFirst();
+                    _orderedCache.RemoveFirst();
                 }
             }
 
             // add or update cached value
-            _cache[key] = value;
+            _orderedCache[key] = value;
         }
     }
 
@@ -107,7 +107,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     {
         lock (_lock)
         {
-            return _cache.Remove(key);
+            return _orderedCache.Remove(key);
         }
     }
 }
