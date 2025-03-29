@@ -9,7 +9,6 @@ namespace Cmg.Dotnet.XCollections;
 /// <typeparam name="TValue"></typeparam>
 public class LruCache<TKey, TValue> where TKey : notnull
 {
-    private long? _capacity = null;
     private readonly SequentialDictionary<TKey, TValue> _orderedCache;
     private readonly object _lock = new();
 
@@ -17,32 +16,22 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// Constructs an instance of an LruCache
     /// </summary>
     /// <param name="capacity">The maximum number of items that can be added to the cache. If null, the cache is unlimited.</param>
+    /// <exception cref="ArgumentException">If capacity is set to a value less than 1</exception>
     public LruCache(long? capacity = null)
     {
         _orderedCache = new SequentialDictionary<TKey, TValue>();
 
+        if (capacity.HasValue && (capacity < 1))
+        {
+            throw new ArgumentException("Capacity must be greater than 0");
+        }
         Capacity = capacity;
     }
 
     /// <summary>
     /// The maximum number of items that can be added to the cache. If null, the cache is unlimited.
     /// </summary>
-    /// <exception cref="ArgumentException">If capacity is set to a value less than 1</exception>
-    public long? Capacity
-    {
-        get
-        {
-            return _capacity;
-        }
-        set
-        {
-            if (value.HasValue && (value < 1))
-            {
-                throw new ArgumentException("Capacity must be greater than 0");
-            }
-            _capacity = value;
-        }
-    }
+    public long? Capacity { get; } = null;
 
     /// <summary>
     /// Gets the number of items currently in the cache.
