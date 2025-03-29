@@ -67,4 +67,26 @@ public class LruCacheTest
         Assert.True(found3);
         Assert.True(val3 == items[3].Value);
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void TestCapacityValidity(int? capacity)
+    {
+        void CreateCache()
+        {
+            var x = new LruCache<int, int>(capacity);
+        }
+
+        if (capacity < 1)
+        {
+            Assert.Throws<ArgumentException>(CreateCache);
+        }
+        else
+        {
+            CreateCache();
+        }
+    }
 }
