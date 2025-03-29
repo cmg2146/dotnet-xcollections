@@ -188,7 +188,7 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
     {
         // will raise an exception if key is not found
         var node = _dict[key];
-        if (node != _storage.First)
+        if (!ReferenceEquals(node, _storage.First))
         {
             _storage.Remove(node);
             _storage.AddFirst(node);
@@ -203,7 +203,7 @@ public class SequentialDictionary<TKey, TValue> : IDictionary<TKey, TValue> wher
     {
         // will raise an exception if key is not found
         var node = _dict[key];
-        if (node != _storage.Last)
+        if (!ReferenceEquals(node, _storage.Last))
         {
             _storage.Remove(node);
             _storage.AddLast(node);
