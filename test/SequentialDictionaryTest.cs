@@ -87,6 +87,9 @@ public class SequentialDictionaryTest
 
         // verify correct amount of items in the dictionary.
         Assert.True(validValues.Count == dict.Count, $"Dictionary Count should be {validValues.Count}");
+
+        // try adding a key that already exists and verify exception is thrown
+        Assert.Throws<ArgumentException>(() => dict.Add(validValues[0].Key, 1));
     }
 
     [Theory]
@@ -110,16 +113,12 @@ public class SequentialDictionaryTest
         Assert.True(dict.Count == 2, "Dictionary should have 2 items");
 
         // now remove item
-        if (testICollectionRemove)
-        {
-            dict.Remove(valueToRemove);
-        }
-        else
-        {
-            dict.Remove(valueToRemove.Key);
-        }
+        bool removed = testICollectionRemove
+            ? dict.Remove(valueToRemove)
+            : dict.Remove(valueToRemove.Key);
 
         // verify item no longer in dictionary
+        Assert.True(removed);
         Assert.True(dict.Count == 1, "Dictionary count should decrement by 1 after removing item");
         Assert.False(
             dict.ContainsKey(valueToRemove.Key),
@@ -129,6 +128,12 @@ public class SequentialDictionaryTest
             dict.ContainsKey(valueToKeep.Key),
             $"Dictionary should still contain item with key '{valueToKeep.Key}'"
         );
+
+        // try removing the same key again
+        removed = testICollectionRemove
+            ? dict.Remove(valueToRemove)
+            : dict.Remove(valueToRemove.Key);
+        Assert.False(removed);
     }
 
     [Fact]
@@ -142,6 +147,7 @@ public class SequentialDictionaryTest
             new ("35543", "1")
         };
         var dict = new SequentialDictionary<string, string>();
+        // now add the items to the dictionary
         foreach (var item in items)
         {
             dict.Add(item);
@@ -149,7 +155,8 @@ public class SequentialDictionaryTest
         Assert.True(items.Count == dict.Count);
 
         // remove first item
-        dict.RemoveFirst();
+        bool removed = dict.RemoveFirst();
+        Assert.True(removed);
         Assert.False(
             dict.ContainsKey(items.First().Key),
             $"Dictionary should no longer contain item with key {items.First().Key}"
@@ -157,12 +164,25 @@ public class SequentialDictionaryTest
         Assert.True(dict.Count == (items.Count-1), "Dictionary should contain one less item");
 
         // remove second item
-        dict.RemoveLast();
+        removed = dict.RemoveLast();
+        Assert.True(removed);
         Assert.False(
             dict.ContainsKey(items.Last().Key),
             $"Dictionary should no longer contain item with key {items.Last().Key}"
         );
         Assert.True(dict.Count == (items.Count-2), "Dictionary should contain one less item");
+    }
+
+    [Fact]
+    public void TestRemoveFirstAndLastOnEmpty()
+    {
+        var dict = new SequentialDictionary<string, string>();
+
+        // verify it's safe to call remove methods when the first and last nodes are null
+        bool removedFirst = dict.RemoveFirst();
+        bool removedLast = dict.RemoveLast();
+        Assert.False(removedFirst);
+        Assert.False(removedLast);
     }
 
     [Fact]
@@ -315,5 +335,29 @@ public class SequentialDictionaryTest
         Assert.Equal(testList, dict);
         Assert.Equal(testList.Select(x => x.Key), dict.Keys);
         Assert.Equal(testList.Select(x => x.Value), dict.Values);
+    }
+
+    [Fact]
+    public void TestLastAndLastOrDefault()
+    {
+        var dict = new SequentialDictionary<string, int>();
+
+        // verify Last throws and LastOrDefault returns null when the dict is empty (no last item)
+        var item = dict.LastOrDefault();
+        Assert.Null(item);
+        Assert.Throws<InvalidOperationException>(() => dict.Last());
+
+        var lastItem = new KeyValuePair<string, int>("five", 5);
+        var testList = new List<KeyValuePair<string, int>>
+        {
+            new("one", 1),
+            new("two", 2),
+            new("three", 3),
+            new("four", 4),
+            lastItem
+        };
+        testList.ForEach(item => dict.Add(item));
+        Assert.True(dict.LastOrDefault().Equals(lastItem));
+        Assert.True(dict.Last().Equals(lastItem));
     }
 }
