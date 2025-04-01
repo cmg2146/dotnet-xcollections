@@ -4,7 +4,7 @@ using Xunit;
 
 using Cmg.Dotnet.XCollections;
 
-public class SequentialDictionaryTest
+public class HashedLinkedListTest
 {
 
     [Fact]
@@ -12,15 +12,14 @@ public class SequentialDictionaryTest
     {
         var invalidKey = "keynotfound";
         var entry = new KeyValuePair<string, int>("key", 1);
-        var dict = new SequentialDictionary<string, int>
-        {
-            entry
-        };
+        var dict = new HashedLinkedList<string, int>();
+
+        var node = dict.AddLast(entry);
 
         // lookup a key that exists
         var found = dict.TryGetValue(entry.Key, out var val);
         Assert.True(found);
-        Assert.True(val == entry.Value);
+        Assert.True(ReferenceEquals(val, node));
 
         // lookup a key that doesnt exist.
         found = dict.TryGetValue(invalidKey, out var val2);
@@ -34,21 +33,17 @@ public class SequentialDictionaryTest
     {
         var otherKey = key+4;
         var invalidKey = key+2;
-        var dict = new SequentialDictionary<int, int>
-        {
-            [key] = 1,
-            [otherKey] = 1,
-        };
+        var dict = new HashedLinkedList<int, int>();
+        dict.AddLast(key, 1);
+        dict.AddLast(otherKey, 1);
 
         Assert.True(dict.ContainsKey(key), $"Dictionary should contain key '{key}'");
         Assert.True(dict.ContainsKey(otherKey), $"Dictionary should contain key '{otherKey}'");
         Assert.False(dict.ContainsKey(invalidKey), $"Dictionary should not contain key '{invalidKey}'");
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void TestAddAndContains(bool testICollectionAdd)
+    [Fact]
+    public void TestAddAndContains()
     {
         var validValues = new List<KeyValuePair<string, int>>
         {
@@ -62,18 +57,8 @@ public class SequentialDictionaryTest
         };
 
         // create the dictionary and add the valid values to it
-        var dict = new SequentialDictionary<string, int>();
-        foreach(var validValue in validValues)
-        {
-            if (testICollectionAdd)
-            {
-                dict.Add(validValue);
-            }
-            else
-            {
-                dict.Add(validValue.Key, validValue.Value);
-            }
-        }
+        var dict = new HashedLinkedList<string, int>();
+        validValues.ForEach(entry => dict.Add(entry));
 
         foreach(var validValue in validValues)
         {
@@ -89,7 +74,7 @@ public class SequentialDictionaryTest
         Assert.True(validValues.Count == dict.Count, $"Dictionary Count should be {validValues.Count}");
 
         // try adding a key that already exists and verify exception is thrown
-        Assert.Throws<ArgumentException>(() => dict.Add(validValues[0].Key, 1));
+        Assert.Throws<ArgumentException>(() => dict.Add(validValues[0]));
     }
 
     [Theory]
@@ -99,7 +84,7 @@ public class SequentialDictionaryTest
     {
         var valueToRemove = new KeyValuePair<string, int>("7", 2);
         var valueToKeep = new KeyValuePair<string, int>("8", 5);
-        var dict = new SequentialDictionary<string, int>
+        var dict = new HashedLinkedList<string, int>
         {
             valueToKeep,
             valueToRemove
@@ -146,12 +131,9 @@ public class SequentialDictionaryTest
             new ("3", "0"),
             new ("35543", "1")
         };
-        var dict = new SequentialDictionary<string, string>();
+        var dict = new HashedLinkedList<string, string>();
         // now add the items to the dictionary
-        foreach (var item in items)
-        {
-            dict.Add(item);
-        }
+        items.ForEach(item => dict.Add(item));
         Assert.True(items.Count == dict.Count);
 
         // remove first item
@@ -176,7 +158,7 @@ public class SequentialDictionaryTest
     [Fact]
     public void TestRemoveFirstAndLastOnEmpty()
     {
-        var dict = new SequentialDictionary<string, string>();
+        var dict = new HashedLinkedList<string, string>();
 
         // verify it's safe to call remove methods when the first and last nodes are null
         bool removedFirst = dict.RemoveFirst();
@@ -189,11 +171,9 @@ public class SequentialDictionaryTest
     public void TestClear()
     {
         var validKey = "1";
-        var dict = new SequentialDictionary<string, int>()
-        {
-            [validKey] = 1,
-            ["2"] = 2,
-        };
+        var dict = new HashedLinkedList<string, int>();
+        dict.AddFirst(validKey, 1);
+        dict.AddFirst("2", 2);
 
         Assert.True(dict.Count == 2, "Dictionary should have 2 items");
         dict.Clear();
@@ -209,38 +189,32 @@ public class SequentialDictionaryTest
     public void TestIndexer()
     {
         var key1 = "key";
-        var key2 = "key2";
         var invalidKey = "keynotfound";
-        var dict = new SequentialDictionary<string, int>();
+        var dict = new HashedLinkedList<string, int>();
 
         Assert.Empty(dict);
 
-        // set a value for key 1
+        // add a value for key 1 and get the value back using the indexer
         var valueToTest = 1;
-        dict[key1] = valueToTest;
-        Assert.True(dict[key1] == valueToTest);
+        var node = dict.AddLast(key1, valueToTest);
+        Assert.True(ReferenceEquals(dict[key1], node));
+        Assert.True(dict[key1].Value.Value == valueToTest);
         Assert.True(dict.Count == 1);
 
-        // update value for key 1 and verify count is same
+        // update value for key 1
         valueToTest = 2;
-        dict[key1] = valueToTest;
-        Assert.True(dict[key1] == valueToTest);
+        node = dict[key1];
+        node.Value = new KeyValuePair<string, int>(key1, valueToTest);
+        Assert.True(ReferenceEquals(dict[key1], node));
+        Assert.True(dict[key1].Value.Value == valueToTest);
         Assert.True(dict.Count == 1);
-
-        // add a new value
-        valueToTest = 5;
-        dict[key2] = valueToTest;
-        Assert.True(dict[key2] == valueToTest);
-        Assert.True(dict.Count == 2);
 
         // try accessing a nonexisting key and verify exception is raised
         Assert.Throws<KeyNotFoundException>(() => dict[invalidKey]);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void TestSequentialOrder(bool useIndexer)
+    [Fact]
+    public void TestSequentialOrder()
     {
         var testList = new List<KeyValuePair<string, int>>
         {
@@ -251,63 +225,42 @@ public class SequentialDictionaryTest
             new("five", 5),
             new("six", 6)
         };
-        var dict = new SequentialDictionary<string, int>();
+        var dict = new HashedLinkedList<string, int>();
         var testIndex = testList.Count / 2;
 
         // add the items to the dictionary
-        foreach (var item in testList)
-        {
-            if (useIndexer)
-            {
-                dict[item.Key] = item.Value;
-            }
-            else
-            {
-                dict.Add(item);
-            }
-        }
-
+        testList.ForEach(entry => dict.AddLast(entry));
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
 
         // move an item to the end
         var itemToMove = testList[testIndex];
         testList.RemoveAt(testIndex);
         testList.Add(itemToMove);
         // move the item in the dictionary too
-        dict.MoveToLast(itemToMove.Key);
-
+        var node = dict[itemToMove.Key];
+        dict.Remove(node);
+        dict.AddLast(node);
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
 
         // move an item from the middle to the start
         itemToMove = testList[testIndex];
         testList.RemoveAt(testIndex);
         testList.Insert(0, itemToMove);
         // move the item in the dictionary too
-        dict.MoveToFirst(itemToMove.Key);
-
+        node = dict[itemToMove.Key];
+        dict.Remove(node);
+        dict.AddFirst(node);
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
 
         // remove last item
         testList.RemoveAt(testList.Count-1);
         dict.RemoveLast();
-
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
 
         // remove first item
         testList.RemoveAt(0);
         dict.RemoveFirst();
-
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
     }
 
     [Fact]
@@ -322,7 +275,7 @@ public class SequentialDictionaryTest
             new("five", 5),
             new("six", 6)
         };
-        var dict = new SequentialDictionary<string, int>()
+        var dict = new HashedLinkedList<string, int>()
         {
             testList[0],
             testList[1],
@@ -333,31 +286,5 @@ public class SequentialDictionaryTest
         };
 
         Assert.Equal(testList, dict);
-        Assert.Equal(testList.Select(x => x.Key), dict.Keys);
-        Assert.Equal(testList.Select(x => x.Value), dict.Values);
-    }
-
-    [Fact]
-    public void TestLastAndLastOrDefault()
-    {
-        var dict = new SequentialDictionary<string, int>();
-
-        // verify Last throws and LastOrDefault returns null when the dict is empty (no last item)
-        var item = dict.LastOrDefault();
-        Assert.Null(item);
-        Assert.Throws<InvalidOperationException>(() => dict.Last());
-
-        var lastItem = new KeyValuePair<string, int>("five", 5);
-        var testList = new List<KeyValuePair<string, int>>
-        {
-            new("one", 1),
-            new("two", 2),
-            new("three", 3),
-            new("four", 4),
-            lastItem
-        };
-        testList.ForEach(item => dict.Add(item));
-        Assert.True(dict.LastOrDefault().Equals(lastItem));
-        Assert.True(dict.Last().Equals(lastItem));
     }
 }

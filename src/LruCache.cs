@@ -9,7 +9,7 @@ namespace Cmg.Dotnet.XCollections;
 /// <typeparam name="TValue"></typeparam>
 public class LruCache<TKey, TValue> where TKey : notnull
 {
-    private readonly SequentialDictionary<TKey, TValue> _orderedCache;
+    private readonly HashedLinkedList<TKey, TValue> _orderedCache;
     private readonly object _lock = new();
 
     /// <summary>
@@ -19,7 +19,7 @@ public class LruCache<TKey, TValue> where TKey : notnull
     /// <exception cref="ArgumentException">If capacity is set to a value less than 1</exception>
     public LruCache(long? capacity = null)
     {
-        _orderedCache = new SequentialDictionary<TKey, TValue>();
+        _orderedCache = new HashedLinkedList<TKey, TValue>();
 
         if (capacity.HasValue && (capacity < 1))
         {
@@ -50,15 +50,14 @@ public class LruCache<TKey, TValue> where TKey : notnull
     {
         lock (_lock)
         {
-            if (!_orderedCache.TryGetValue(key, out value))
+            if (!_orderedCache.TryGetValue(key, out var node))
             {
+                value = default;
                 return false;
             }
 
-            // any time an item is retrieved, move it to the end of the cache
-            // NOTE: Inefficient. one more key lookup than necessary due to TryGetValue called above
-            _orderedCache.MoveToLast(key);
-
+            Touch(node);
+            value = node.Value.Value;
             return true;
         }
     }
@@ -72,21 +71,24 @@ public class LruCache<TKey, TValue> where TKey : notnull
     {
         lock (_lock)
         {
-            // call TryGet so if item exists it is moved to end of cache
-            var found = TryGet(key, out var item);
-            if (!found)
+            var item = new KeyValuePair<TKey, TValue>(key, value);
+
+            if (_orderedCache.TryGetValue(key, out var node))
             {
-                // if item wasnt found then we will be adding a new entry. If there isnt room
-                // left, delete oldest entry from cache.
+                // key already exists, update it
+                node.Value = item;
+                Touch(node);
+            }
+            else
+            {
+                // If there isnt room left to add a new entry, delete oldest entry from cache.
                 if (Count >= Capacity)
                 {
                     _orderedCache.RemoveFirst();
                 }
-            }
 
-            // add or update cached value
-            // NOTE: Inefficient. one more key lookup than necessary due to Get called above
-            _orderedCache[key] = value;
+                _orderedCache.AddLast(item);
+            }
         }
     }
 
@@ -100,6 +102,16 @@ public class LruCache<TKey, TValue> where TKey : notnull
         lock (_lock)
         {
             return _orderedCache.Remove(key);
+        }
+    }
+
+    private void Touch(LinkedListNode<KeyValuePair<TKey, TValue>> node)
+    {
+        // any time an item is retrieved or updated, move it to the end of the cache
+        if (!ReferenceEquals(node, _orderedCache.Last))
+        {
+            _orderedCache.Remove(node);
+            _orderedCache.AddLast(node);
         }
     }
 }
