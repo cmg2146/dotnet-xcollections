@@ -88,13 +88,13 @@ public class BinaryHeap<TValue> where TValue : IComparable<TValue>
             throw new InvalidOperationException("Heap is full!");
         }
 
+        // add the node to the first free element in the heap array
         var node = new BinaryHeapNode<TValue>
         {
             Value = value,
             Index = Count,
             Heap = this
         };
-
         _heap[node.Index] = node;
         Count++;
 
@@ -121,41 +121,37 @@ public class BinaryHeap<TValue> where TValue : IComparable<TValue>
     /// <param name="value"></param>
     public void Update(BinaryHeapNode<TValue> node, TValue value)
     {
-        var valComparison = value.CompareTo(node.Value);
+        var oldValue = node.Value;
+
         // if the value is the same, do nothing
-        if (valComparison != 0)
+        if (!value.Equals(oldValue))
         {
             node.Value = value;
-
-            var moveUp = IsMaxHeap
-                ? valComparison > 0
-                : valComparison < 0;
-            Update(node, moveUp);
+            Update(node, ShouldMoveUp(value, oldValue));
         }
     }
 
     /// <summary>
-    /// Replaces the current root with the specified node and fixes up the heap to maintain the
-    /// heap property.
+    /// Swaps the root of this heap with the root of the other heap, fixing up both heaps to
+    /// maintain the heap property.
     /// </summary>
-    /// <param name="node"></param>
-    public void ReplaceRoot(BinaryHeapNode<TValue> node)
+    /// <param name="otherHeap"></param>
+    public void SwapRoot(BinaryHeap<TValue> otherHeap)
     {
-        if (Count == 0)
+        if ((Root == null) || (otherHeap.Root == null))
         {
-            throw new InvalidOperationException("Heap is empty, no root!");
-        }
-        if (node.Heap != null)
-        {
-            throw new ArgumentException("Node belongs to a heap already");
+            throw new InvalidOperationException("One of the heaps is empty! Can't swap roots");
         }
 
-        node.Heap = this;
-        node.Index = 0;
-        _heap[0] = node;
+        var (ourRoot, theirRoot) = (otherHeap.Root, Root);
+        ourRoot.Heap = this;
+        theirRoot.Heap = otherHeap;
+        _heap[0] = ourRoot;
+        otherHeap._heap[0] = theirRoot;
 
-        // make sure to fix up the heap
-        Update(node, false);
+        // make sure to fix up the heaps
+        Update(ourRoot, false);
+        otherHeap.Update(theirRoot, false);
     }
 
     /// <summary>
@@ -193,16 +189,9 @@ public class BinaryHeap<TValue> where TValue : IComparable<TValue>
         BinaryHeapNode<TValue>? result = null;
 
         var parent = GetParent(node);
-        if (parent != null)
+        if ((parent != null) && ShouldMoveUp(node.Value, parent.Value))
         {
-            var valComparison = node.Value.CompareTo(parent.Value);
-            var update = IsMaxHeap
-                ? valComparison > 0
-                : valComparison < 0;
-            if (update)
-            {
-                result = parent;
-            }
+            result = parent;
         }
 
         return result;
@@ -218,19 +207,42 @@ public class BinaryHeap<TValue> where TValue : IComparable<TValue>
         BinaryHeapNode<TValue>? result = null;
 
         var candidateChild = GetMaxOrMinChild(node);
-        if (candidateChild != null)
+        if ((candidateChild != null) && ShouldMoveDown(node.Value, candidateChild.Value))
         {
-            var valComparison = node.Value.CompareTo(candidateChild.Value);
-            bool shouldUpdate = IsMaxHeap
-                ? valComparison < 0
-                : valComparison > 0;
-            if (shouldUpdate)
-            {
-                result = candidateChild;
-            }
+            result = candidateChild;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Indicates if the first value should be moved up in the heap, relative to the second value, to
+    /// satisfy the heap property.
+    /// </summary>
+    /// <param name="firstValue"></param>
+    /// <param name="secondValue"></param>
+    /// <returns></returns>
+    private bool ShouldMoveUp(TValue firstValue, TValue secondValue)
+    {
+        var valComparison = firstValue.CompareTo(secondValue);
+        return IsMaxHeap
+            ? (valComparison > 0)
+            : (valComparison < 0);
+    }
+
+    /// <summary>
+    /// Indicates if the first value should be moved down in the heap, relative to the second value, to
+    /// satisfy the heap property.
+    /// </summary>
+    /// <param name="firstValue"></param>
+    /// <param name="secondValue"></param>
+    /// <returns></returns>
+    private bool ShouldMoveDown(TValue firstValue, TValue secondValue)
+    {
+        var valComparison = firstValue.CompareTo(secondValue);
+        return IsMaxHeap
+            ? (valComparison < 0)
+            : (valComparison > 0);
     }
 
     /// <summary>
@@ -331,10 +343,8 @@ public class BinaryHeap<TValue> where TValue : IComparable<TValue>
         }
         else
         {
-            // use the largest or smallest child, depending on the heap property
-            var valComparison = leftChild.Value.CompareTo(rightChild.Value);
-            var useLeftChild = (IsMaxHeap && (valComparison > 0)) || (!IsMaxHeap && (valComparison < 0));
-            result = useLeftChild
+            // use the largest child for max heap and smallest for min heap
+            result = ShouldMoveUp(leftChild.Value, rightChild.Value)
                 ? leftChild
                 : rightChild;
         }

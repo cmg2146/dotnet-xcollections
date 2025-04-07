@@ -62,7 +62,7 @@ public class MedianHeap
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public int GetTwiceMedian
+    public int TwiceMedian
     {
         get
         {
@@ -71,19 +71,23 @@ public class MedianHeap
                 throw new InvalidOperationException("No entries yet!");
             }
 
-            // The logic has been designed to
-            // 1) keep the heaps the same size if the number of samples is even
-            // 2) make the min heap one element larger if the number of samples is odd.
-            // when the number of samples is odd, the median value is stored in the root of the min
-            // heap and when the number of samples is even, the median value is the average of the
-            // values stored in the two heap roots.
-            var isEven = (Count % 2) == 0;
-            var result = _minHeap.Root!.Value;
-            result += isEven
-                ? _maxHeap.Root!.Value
-                : _minHeap.Root!.Value;
+            // The logic has been designed to keep the heaps the same size if the number of samples
+            // is even or within 1 when the number of samples is odd.
+            // When the heap sizes differ, the median value is stored in the root of the larger heap
+            // and when the sizes are the same, the median value is the average of the values stored
+            // in the two heap roots.
+            int firstMedian = _maxHeap.Root!.Value;
+            int secondMedian = _minHeap.Root!.Value;
+            if (_minHeap.Count > _maxHeap.Count)
+            {
+                firstMedian = secondMedian;
+            }
+            else if (_maxHeap.Count > _minHeap.Count)
+            {
+                secondMedian = firstMedian;
+            }
 
-            return result;
+            return firstMedian + secondMedian;
         }
     }
 
@@ -96,23 +100,24 @@ public class MedianHeap
         if (Count == Capacity)
         {
             // we have reached the max number of samples
-            // update the node's value
+            // replace the value in the oldest sample
             var nodeToUpdate = _rollingMap[_rollingIndex]!;
             nodeToUpdate.Heap!.Update(nodeToUpdate, value);
         }
         else
         {
             // we havent reached the max sample size yet.
-            // alternate between adding to min and max heap to ensure the heaps are the same
-            // size or the min heap is one size larger.
+            // alternate between adding to min and max heap to keep the heaps the same size or
+            // within 1 to ensure the median value(s) are always stored in the roots.
             var isEven = Count % 2 == 0;
             var heapToAdd = isEven ? _minHeap : _maxHeap;
             _rollingMap[_rollingIndex] = heapToAdd.Add(value);
         }
 
         // at this point, the min and max heaps both satisfy their heap property indepedently,
-        // but, it's possible we still need to swap roots and update them again to ensure the
-        // root nodes contain the two middle values.
+        // but, it's possible the heap we added/updated the value in wasnt the correct heap to
+        // ensure the two middle values are at the heap roots. So swap the roots then fix up the
+        // heaps again, if necessary.
         var minHeapRoot = _minHeap.Root;
         var maxHeapRoot = _maxHeap.Root;
         if ((minHeapRoot != null) && (maxHeapRoot != null))
@@ -120,10 +125,7 @@ public class MedianHeap
             // min heap root value should be greater than max heap root value
             if (minHeapRoot.Value.CompareTo(maxHeapRoot.Value) < 0)
             {
-                minHeapRoot.Heap = null;
-                maxHeapRoot.Heap = null;
-                _minHeap.ReplaceRoot(maxHeapRoot);
-                _maxHeap.ReplaceRoot(minHeapRoot);
+                _minHeap.SwapRoot(_maxHeap);
             }
         }
 
