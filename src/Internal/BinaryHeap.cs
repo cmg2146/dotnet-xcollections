@@ -9,7 +9,7 @@ namespace Cmg.Dotnet.XCollections;
 /// A node in a BinaryHeap
 /// </summary>
 /// <typeparam name="TValue"></typeparam>
-public class BinaryHeapNode<TValue> where TValue : IComparable<TValue>, IEquatable<TValue>
+internal class BinaryHeapNode<TValue> where TValue : IComparable<TValue>, IEquatable<TValue>
 {
     /// <summary>
     /// The value stored in the node
@@ -22,14 +22,14 @@ public class BinaryHeapNode<TValue> where TValue : IComparable<TValue>, IEquatab
     /// <summary>
     /// The heap this node belongs to
     /// </summary>
-    public BinaryHeap<TValue>? Heap { get; internal set; } = null;
+    public BinaryHeap<TValue> Heap { get; internal set; } = null!;
 }
 
 /// <summary>
 /// A binary heap data structure supporting min or max heaps.
 /// </summary>
 /// <typeparam name="TValue"></typeparam>
-public class BinaryHeap<TValue> where TValue : IComparable<TValue>, IEquatable<TValue>
+internal class BinaryHeap<TValue> where TValue : IComparable<TValue>, IEquatable<TValue>
 {
     /// <summary>
     /// True if max heap, false if min heap
