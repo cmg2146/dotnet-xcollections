@@ -87,10 +87,26 @@ internal class BinaryHeap<TValue> where TValue : IComparable<TValue>, IEquatable
     /// Remove the specified node from the heap
     /// </summary>
     /// <param name="node"></param>
-    /// <exception cref="NotImplementedException"></exception>
     public void Remove(BinaryHeapNode<TValue> node)
     {
-        throw new NotImplementedException("Not implemented yet");
+        var lastNodeIndex = Count - 1;
+        if (node.Index == lastNodeIndex)
+        {
+            // no other work needs to be done if removing the last node because it's already at the
+            // bottom of the heap
+            RemoveLastNode();
+        }
+        else
+        {
+            // if the node is not the last node in the underlying list, swap it with the last
+            // node and then remove it
+            var nodeToSwap = _heap[lastNodeIndex]!;
+            SwapNodes(node, nodeToSwap);
+            RemoveLastNode();
+
+            // sift the swapped node back down to maintain the heap property.
+            Update(nodeToSwap, false);
+        }
     }
 
     /// <summary>
@@ -131,6 +147,12 @@ internal class BinaryHeap<TValue> where TValue : IComparable<TValue>, IEquatable
         // make sure to fix up the heaps
         Update(ourRoot, false);
         otherHeap.Update(theirRoot, false);
+    }
+
+    private void RemoveLastNode()
+    {
+        _heap[Count - 1] = null;
+        Count--;
     }
 
     /// <summary>
